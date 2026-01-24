@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nyx Agent - AI Trading Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(79, 172, 254, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(79, 172, 254, 0.6), 0 0 60px rgba(0, 242, 254, 0.4); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #000000;
+            color: #e0e6ed;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(79, 172, 254, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(0, 242, 254, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 20%, rgba(138, 43, 226, 0.1) 0%, transparent 50%);
+            animation: gradientShift 15s ease infinite;
+            background-size: 200% 200%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.03;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' /%3E%3C/svg%3E");
+            z-index: 1;
+        }
+
+        .header {
+            position: relative;
+            z-index: 10;
+            background: rgba(10, 14, 39, 0.8);
+            backdrop-filter: blur(20px);
+            padding: 20px 40px;
+            border-bottom: 1px solid rgba(79, 172, 254, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 900;
+            background: linear-gradient(45deg, #00f2fe, #4facfe, #00f2fe, #4facfe);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease infinite;
+            filter: drop-shadow(0 0 20px rgba(79, 172, 254, 0.5));
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo::before {
+            content: '🤖';
+            font-size: 32px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .wallet-btn {
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #00f2fe, #4facfe, #00f2fe);
+            background-size: 200% 200%;
+            border: none;
+            border-radius: 12px;
+            color: #000;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            animation: glow 2s ease-in-out infinite;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+        }
+
+        .wallet-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .wallet-btn:hover::before {
+            left: 100%;
+        }
+
+        .wallet-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 0 60px rgba(79, 172, 254, 0.8), 0 0 100px rgba(0, 242, 254, 0.5);
+        }
+
+        .main-container {
+            position: relative;
+            z-index: 5;
+            display: grid;
+            grid-template-columns: 1fr 450px;
+            gap: 30px;
+            padding: 30px 40px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .trading-section {
+            background: rgba(15, 20, 45, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(79, 172, 254, 0.2);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .trading-section::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #4facfe, #00f2fe, #4facfe);
+            border-radius: 20px;
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.3s;
+        }
+
+        .trading-section:hover::before {
+            opacity: 0.3;
+        }
+
+        .chart-area {
+            background: rgba(5, 10, 30, 0.8);
+            border-radius: 16px;
+            height: 450px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(79, 172, 254, 0.2);
+            box-shadow: inset 0 0 40px rgba(79, 172, 254, 0.1);
+        }
+
+        .price-display {
+            font-size: 48px;
+            font-weight: 900;
+            background: linear-gradient(45deg, #00ff88, #00ffcc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 0 20px rgba(0, 255, 136, 0.5));
+            animation: float 2s ease-in-out infinite;
+        }
+
+        .price-change {
+            color: #00ff88;
+            font-size: 18px;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .price-change.negative {
+            color: #ff4757;
+            text-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+        }
+
+        .trade-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 30px;
+        }
+
+        .trade-btn {
+            padding: 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .buy-btn {
+            background: linear-gradient(135deg, #00ff88, #00ffcc);
+            color: #000;
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+        }
+
+        .buy-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .buy-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .sell-btn {
+            background: linear-gradient(135deg, #ff4757, #ff6b81);
+            color: white;
+            box-shadow: 0 10px 30px rgba(255, 71, 87, 0.3);
+        }
+
+        .sell-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .sell-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .trade-btn:hover {
+            transform: translateY(-4px) scale(1.02);
+        }
+
+        .buy-btn:hover {
+            box-shadow: 0 15px 50px rgba(0, 255, 136, 0.5);
+        }
+
+        .sell-btn:hover {
+            box-shadow: 0 15px 50px rgba(255, 71, 87, 0.5);
+        }
+
+        .ai-assistant {
+            background: rgba(15, 20, 45, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            height: fit-content;
+            box-shadow: 0 20px 60px rgba(79, 172, 254, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ai-assistant::before {
+            content: '';
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(79, 172, 254, 0.2), transparent 70%);
+            top: -100px;
+            right: -100px;
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .ai-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(79, 172, 254, 0.3);
+            position: relative;
+        }
+
+        .ai-avatar {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #00f2fe, #4facfe);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            animation: glow 2s ease-in-out infinite;
+            position: relative;
+        }
+
+        .ai-avatar::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: inherit;
+            filter: blur(20px);
+            opacity: 0.5;
+            z-index: -1;
+        }
+
+        .ai-title {
+            font-size: 22px;
+            font-weight: 900;
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .ai-status {
+            font-size: 13px;
+            color: #00ff88;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ai-status::before {
+            content: '●';
+            animation: glow 1s ease-in-out infinite;
+            color: #00ff88;
+        }
+
+        .chat-messages {
+            max-height: 450px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding-right: 10px;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(79, 172, 254, 0.1);
+            border-radius: 10px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #4facfe, #00f2fe);
+            border-radius: 10px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            padding: 16px;
+            border-radius: 12px;
+            animation: fadeIn 0.5s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.ai {
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.15), rgba(0, 242, 254, 0.1));
+            border-left: 3px solid #4facfe;
+            box-shadow: 0 5px 20px rgba(79, 172, 254, 0.1);
+        }
+
+        .message.user {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 255, 204, 0.1));
+            border-left: 3px solid #00ff88;
+            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.1);
+        }
+
+        .message-label {
+            font-size: 12px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .strategy-card {
+            background: rgba(79, 172, 254, 0.1);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            border-radius: 12px;
+            padding: 18px;
+            margin-top: 14px;
+            box-shadow: 0 5px 20px rgba(79, 172, 254, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .strategy-title {
+            font-weight: 900;
+            color: #4facfe;
+            margin-bottom: 10px;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 12px;
+            position: relative;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 16px;
+            background: rgba(5, 10, 30, 0.6);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            border-radius: 12px;
+            color: #e0e6ed;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 20px rgba(79, 172, 254, 0.3);
+            background: rgba(5, 10, 30, 0.8);
+        }
+
+        .send-btn {
+            padding: 16px 28px;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            font-weight: 900;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(79, 172, 254, 0.5);
+        }
+
+        .market-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: rgba(79, 172, 254, 0.08);
+            padding: 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(79, 172, 254, 0.2);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #4facfe, transparent);
+            transform: translateX(-100%);
+            animation: shimmer 3s infinite;
+        }
+
+        .stat-card:hover {
+            background: rgba(79, 172, 254, 0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(79, 172, 254, 0.2);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 900;
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            font-size: 13px;
+            margin-bottom: 8px;
+            opacity: 0.8;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .trade-input {
+            width: 100%;
+            padding: 16px;
+            background: rgba(5, 10, 30, 0.6);
+            border: 1px solid rgba(79, 172, 254, 0.2);
+            border-radius: 12px;
+            color: #e0e6ed;
+            font-size: 18px;
+            font-weight: 700;
+            transition: all 0.3s;
+        }
+
+        .trade-input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 20px rgba(79, 172, 254, 0.3);
+            background: rgba(5, 10, 30, 0.8);
+        }
+
+        .balance-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-top: 10px;
+            opacity: 0.7;
+            font-weight: 600;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .particle {
+            position: fixed;
+            width: 3px;
+            height: 3px;
+            background: #4facfe;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particleFloat 4s linear infinite;
+            z-index: 2;
+        }
+
+        @keyframes particleFloat {
+            0% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(100px);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="noise"></div>
+    
+    <div class="header">
+        <div class="logo">Nyx Agent</div>
+        <button class="wallet-btn" onclick="connectWallet()">⚡ Connect Wallet</button>
+    </div>
+
+    <div class="main-container">
+        <div class="trading-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <div>
+                    <h2 style="font-size: 24px; margin-bottom: 12px; font-weight: 900; letter-spacing: 1px;">ETH/USDT</h2>
+                    <div class="price-display">$3,245.82</div>
+                    <div class="price-change">+2.34% (+$74.12) ↗</div>
+                </div>
+            </div>
+
+            <div class="market-stats">
+                <div class="stat-card">
+                    <div class="stat-label">24h Volume</div>
+                    <div class="stat-value">$2.4B</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">24h High</div>
+                    <div class="stat-value">$3,289</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">24h Low</div>
+                    <div class="stat-value">$3,156</div>
+                </div>
+            </div>
+
+            <div class="chart-area">
+                <canvas id="priceChart"></canvas>
+            </div>
+
+            <div class="input-group">
+                <div class="input-label">Amount (ETH)</div>
+                <input type="number" class="trade-input" placeholder="0.00" value="0.5">
+                <div class="balance-info">
+                    <span>💰 Balance: 2.45 ETH</span>
+                    <span>≈ $7,952.26</span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-label">Total (USDT)</div>
+                <input type="number" class="trade-input" placeholder="0.00" value="1622.91">
+            </div>
+
+            <div class="trade-panel">
+                <button class="trade-btn buy-btn" onclick="executeTrade('buy')">🚀 Buy ETH</button>
+                <button class="trade-btn sell-btn" onclick="executeTrade('sell')">📉 Sell ETH</button>
+            </div>
+        </div>
+
+        <div class="ai-assistant">
+            <div class="ai-header">
+                <div class="ai-avatar">🤖</div>
+                <div>
+                    <div class="ai-title">Nyx AI Assistant</div>
+                    <div class="ai-status">Online & Analyzing</div>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message ai">
+                    <div class="message-label">Nyx AI</div>
+                    <div>Good morning! I've analyzed current market conditions. ETH is showing bullish momentum with strong support at $3,200. 📊</div>
+                    <div class="strategy-card">
+                        <div class="strategy-title">🎯 Recommended Strategy</div>
+                        <div style="font-size: 13px; line-height: 1.8;">
+                            <strong>Type:</strong> Conservative Accumulation<br>
+                            <strong>Entry:</strong> $3,180 - $3,250<br>
+                            <strong>Target:</strong> $3,450 (+6.3%)<br>
+                            <strong>Risk:</strong> Low (Sentiment: 72% bullish)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <input type="text" class="chat-input" id="userInput" placeholder="Ask me anything about markets..." onkeypress="handleKeyPress(event)">
+                <button class="send-btn" onclick="sendMessage()">Send ➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Create floating particles
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * window.innerWidth + 'px';
+            particle.style.animationDelay = Math.random() * 4 + 's';
+            document.body.appendChild(particle);
+            
+            setTimeout(() => particle.remove(), 4000);
+        }
+
+        setInterval(createParticle, 800);
+
+        // Enhanced chart
+        const canvas = document.getElementById('priceChart');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            drawChart();
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function drawChart() {
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            // Generate realistic price data
+            const points = 150;
+            const data = [];
+            let price = 3150;
+            
+            for (let i = 0; i < points; i++) {
+                const trend = Math.sin(i / 20) * 30;
+                const noise = (Math.random() - 0.48) * 15;
+                price = 3150 + trend + noise + (i * 0.5);
+                data.push(price);
+            }
+            
+            // Draw grid with glow
+            ctx.strokeStyle = 'rgba(79, 172, 254, 0.15)';
+            ctx.lineWidth = 1;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'rgba(79, 172, 254, 0.3)';
+            
+            for (let i = 0; i < 5; i++) {
+                const y = (height / 4) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+            
+            ctx.shadowBlur = 0;
+            
+            // Draw gradient fill
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, 'rgba(79, 172, 254, 0.4)');
+            gradient.addColorStop(0.5, 'rgba(79, 172, 254, 0.2)');
+            gradient.addColorStop(1, 'rgba(79, 172, 254, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.moveTo(0, height);
+            
+            const minPrice = Math.min(...data);
+            const maxPrice = Math.max(...data);
+            const priceRange = maxPrice - minPrice;
+            
+            data.forEach((price, i) => {
+                const x = (width / points) * i;
+                const y = height - ((price - minPrice) / priceRange) * (height - 40) - 20;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            
+            ctx.lineTo(width, height);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Draw glowing line
+            ctx.strokeStyle = '#4facfe';
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#4facfe';
+            ctx.beginPath();
+            
+            data.forEach((price, i) => {
+                const x = (width / points) * i;
+                const y = height - ((price - minPrice) / priceRange) * (height - 40) - 20;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            
+            ctx.stroke();
+            
+            // Draw glow dots on peaks
+            ctx.shadowBlur = 20;
+            for (let i = 10; i < points; i += 20) {
+                const x = (width / points) * i;
+                const y = height - ((data[i] - minPrice) / priceRange) * (height - 40) - 20;
+                
+                ctx.fillStyle = '#00f2fe';
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.shadowBlur = 0;
+        }
+
+        let animationFrame = 0;
+        function animateChart() {
+            animationFrame++;
+            if (animationFrame % 60 === 0) {
+                drawChart();
+            }
+            requestAnimationFrame(animateChart);
+        }
+        animateChart();
+
+        function connectWallet() {
+            const btn = event.target;
+            btn.innerHTML = '⏳ Connecting...';
+            
+            setTimeout(() => {
+                btn.innerHTML = '✅ Connected';
+                setTimeout(() => {
+                    btn.innerHTML = '🔗 0x7a8f...2d4e';
+                }, 1000);
+            }, 1500);
+        }
+
+        function executeTrade(type) {
+            const action = type === 'buy' ? 'Buying' : 'Selling';
+            const emoji = type === 'buy' ? '🚀' : '📉';
+            
+            addMessage('user', `Execute ${type} order for 0.5 ETH`);
+            
+            setTimeout(() => {
+                addMessage('ai', `${emoji} ${action} 0.5 ETH... Transaction confirmed! Your order has been executed at $3,245.82.`, true);
+            }, 1000);
+        }
+
+        function addMessage(sender, text, hasStrategy = false) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            let content = `
+                <div class="message-label">${sender === 'ai' ? 'Nyx AI' : 'You'}</div>
+                <div>${text}</div>
+            `;
+            
+            if (hasStrategy && sender === 'ai') {
+                content += `
+                    <div class="strategy-card">
+                        <div class="strategy-title">✨ Trade Executed</div>
+                        <div style="font-size: 13px; line-height: 1.8;">
+                            <strong>Amount:</strong> 0.5 ETH<br>
+                            <strong>Price:</strong> $3,245.82<br>
+                            <strong>Total:</strong> $1,622.91<br>
+                            <strong>Status:</strong> <span style="color: #00ff88;">Confirmed ✓</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            messageDiv.innerHTML = content;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                addMessage('user', message);
+                input.value = '';
+                
+                setTimeout(() => {
+                    const responses = [
+                        "Based on current market analysis, I'm seeing strong bullish indicators. The RSI is at 58, suggesting room for upward movement. 📈",
+                        "Market sentiment is positive! Trading volume increased by 23% in the last hour. Consider scaling into your position. 💎",
+                        "Technical analysis shows ETH breaking resistance at $3,240. Next target is $3,450. Watch for consolidation. 🎯",
+                        "Risk assessment: Current volatility is moderate. Stop-loss recommendation at $3,180 for optimal risk management. ⚡",
+                        "Whale activity detected! Large buy orders accumulating near $3,200 support level. Bullish signal confirmed. 🐋"
+                    ];
+                    
+                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                    addMessage('ai', randomResponse);
+                }, 800);
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Animate price changes
+        setInterval(() => {
+            const priceEl = document.querySelector('.price-display');
+            const changeEl = document.querySelector('.price-change');
+            const currentPrice = parseFloat(priceEl.textContent.replace(', '').replace(',', ''));
+            
+            const change = (Math.random() - 0.5) * 5;
+            const newPrice = currentPrice + change;
+            const percentChange = ((newPrice - 3200) / 3200 * 100).toFixed(2);
+            const dollarChange = (newPrice - 3200).toFixed(2);
+            
+            priceEl.textContent = `${newPrice.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+            
+            if (percentChange > 0) {
+                changeEl.className = 'price-change';
+                changeEl.textContent = `+${percentChange}% (+${dollarChange}) ↗`;
+            } else {
+                changeEl.className = 'price-change negative';
+                changeEl.textContent = `${percentChange}% (${dollarChange}) ↘`;
+            }
+        }, 3000);
+    </script>
+</body>
+</html>
